@@ -19,7 +19,7 @@
  * Difficulty: 1
  */
 int bitAnd(int x, int y) {
-    return 2;
+    return ~(~x|~y);
 }
 
 /*
@@ -30,7 +30,7 @@ int bitAnd(int x, int y) {
  *   Difficulty: 1
  */
 int bitXor(int x, int y) {
-    return 2;
+    return ~(x&y)&~(~x&~y);
 }
 
 /*
@@ -50,7 +50,11 @@ int bitXor(int x, int y) {
  *   1 if x and y have the same sign , 0 otherwise.
  */
 int samesign(int x, int y) {
-    return 2;
+    if(!x)
+        return !y;
+    if(!y)
+        return 0;
+    return (x>>31)^(y>>31);
 }
 
 /*
@@ -63,7 +67,22 @@ int samesign(int x, int y) {
  *   Difficulty: 4
  */
 int logtwo(int v) {
-    return 2;
+    int result=0;
+    int shift;
+    shift=(v>0xFFFF)<<4;
+    result=result|shift;
+    v=v>>shift;
+    shift=(v>0xFF)<<3;
+    result=result|shift;
+    v=v>>shift;
+    shift=(v>0xF)<<2;
+    result=result|shift;
+    v=v>>shift;
+    shift=(v>0x3)<<1;
+    result=result|shift;
+    v=v>>shift;
+    result=result|(v>1);
+    return result;
 }
 
 /*
@@ -76,7 +95,12 @@ int logtwo(int v) {
  *    Difficulty: 2
  */
 int byteSwap(int x, int n, int m) {
-    return 2;
+    int ns=n<<3;
+    int ms=m<<3;
+    int a=(x>>ns)&0xFF;
+    int b=(x>>ms)&0xFF;
+    int diff=a^b;
+    return x^(diff<<ns)^(diff<<ms);
 }
 
 /*
@@ -88,7 +112,14 @@ int byteSwap(int x, int n, int m) {
  *   Difficulty: 3
  */
 unsigned reverse(unsigned v) {
-    return 2;
+    unsigned result=0;
+    int i=32;
+    while (i){
+        result=(result<<1)|(v&1);
+        v=v>>1;
+        i=i-1;
+    }
+    return result;
 }
 
 /*
@@ -100,7 +131,10 @@ unsigned reverse(unsigned v) {
  *   Difficulty: 3
  */
 int logicalShift(int x, int n) {
-    return 2;
+    int shift=n+~0+!n;
+    int mask=~((~0x7FFFFFFF)>>shift);
+    mask=mask|((~0x7FFFFFFF)&(~(!n)+1))；
+    return (x>>n)&mask;
 }
 
 /*
@@ -112,7 +146,21 @@ int logicalShift(int x, int n) {
  *   Difficulty: 4
  */
 int leftBitCount(int x) {
-    return 2;
+    int y=~x;
+    int n=0;
+    int t;
+    t=!(y>>16)<<4;
+    n=n+t;
+    t=!(y>>(24+~n+1))<<3;
+    n=n+t;
+    t=!(y>>(28+~n+1))<<2;
+    n=n+t;
+    t=!(y>>(30+~n+1))<<1;
+    n=n+t;
+    t=!(y>>(31+~n+1));
+    n=n+t;
+    n=n+!y;
+    return n;
 }
 
 /*
@@ -124,7 +172,33 @@ int leftBitCount(int x) {
  *   Difficulty: 4
  */
 unsigned float_i2f(int x) {
-    return 2;
+    unsigned sign=0;
+    unsigned ux=x;
+    unsigned frac;
+    unsigned round;
+    int exp=158;
+    if(!x) return 0;
+    if(x<0){
+        sign=1u<<31;
+        ux=~ux+1;
+    }
+    while(!(ux&0x80000000u)){
+        ux=ux<<1;
+        exp=exp-1;
+    }
+    frac=ux>>8;
+    round=ux&0xFF;
+    if(round>0x80){
+        frac=frac+1;
+    }
+    else if(round==0x80){
+        if(frac&1) frac=frac+1;
+    }
+    if(frac>>24){
+        exp=exp+1;
+        frac=frac>>1;
+    }
+    return sign|(exp<<23)|(frac&0x7FFFFF);
 }
 
 /*
@@ -139,7 +213,30 @@ unsigned float_i2f(int x) {
  *   Difficulty: 4
  */
 unsigned floatScale2(unsigned uf) {
-    return 2;
+	unsigned sign=uf&0x80000000;
+	unsigned exp=uf&0x7F800000;
+	unsigned frac=uf&0x007FFFFF;
+
+	if(exp==0x7F800000)
+		return uf;
+
+	if(!exp){
+		frac=frac<<1;
+
+		if(frac&0x00800000){
+			exp=0x00800000;
+			frac=frac&0x007FFFFF;
+		}
+
+		return sign|exp|frac;
+	}
+
+	exp=exp+0x00800000;
+
+	if(exp==0x7F800000)
+		frac=0;
+
+	return sign|exp|frac;
 }
 
 /*
@@ -156,7 +253,30 @@ unsigned floatScale2(unsigned uf) {
  *   Difficulty: 3
  */
 int float64_f2i(unsigned uf1, unsigned uf2) {
-    return 2;
+	unsigned sign=uf&0x80000000;
+	unsigned exp=uf&0x7F800000;
+	unsigned frac=uf&0x007FFFFF;
+
+	if(exp==0x7F800000)
+		return uf;
+
+	if(!exp){
+		frac=frac<<1;
+
+		if(frac&0x00800000){
+			exp=0x00800000;
+			frac=frac&0x007FFFFF;
+		}
+
+		return sign|exp|frac;
+	}
+
+	exp=exp+0x00800000;
+
+	if(exp==0x7F800000)
+		frac=0;
+
+	return sign|exp|frac;
 }
 
 /*
@@ -173,5 +293,14 @@ int float64_f2i(unsigned uf1, unsigned uf2) {
  *   Difficulty: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+	if(x<-149)
+		return 0;
+
+	if(x<-126)
+		return 1<<(x+149);
+
+	if(x<=127)
+		return (x+127)<<23;
+
+	return 0x7F800000;
 }
