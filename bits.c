@@ -54,7 +54,7 @@ int samesign(int x, int y) {
         return !y;
     if(!y)
         return 0;
-    return (x>>31)^(y>>31);
+    return !((x>>31)^(y>>31));
 }
 
 /*
@@ -133,7 +133,7 @@ unsigned reverse(unsigned v) {
 int logicalShift(int x, int n) {
     int shift=n+~0+!n;
     int mask=~((~0x7FFFFFFF)>>shift);
-    mask=mask|((~0x7FFFFFFF)&(~(!n)+1))；
+    mask=mask|((~0x7FFFFFFF)&~(~0+!n));
     return (x>>n)&mask;
 }
 
@@ -253,30 +253,27 @@ unsigned floatScale2(unsigned uf) {
  *   Difficulty: 3
  */
 int float64_f2i(unsigned uf1, unsigned uf2) {
-	unsigned sign=uf&0x80000000;
-	unsigned exp=uf&0x7F800000;
-	unsigned frac=uf&0x007FFFFF;
+	unsigned exp=(uf2>>20)&0x7FF;
+	unsigned mant=(uf2&0xFFFFF)|0x100000;
+	int e=exp-1023;
+	int value;
 
-	if(exp==0x7F800000)
-		return uf;
+	if(e<0)
+		return 0;
 
-	if(!exp){
-		frac=frac<<1;
+	if(e>30)
+		return ~0x7FFFFFFF;
 
-		if(frac&0x00800000){
-			exp=0x00800000;
-			frac=frac&0x007FFFFF;
-		}
-
-		return sign|exp|frac;
+	if(e<=20){
+		value=mant>>(20-e);
+	}else{
+		value=(mant<<(e-20))|(uf1>>(52-e));
 	}
 
-	exp=exp+0x00800000;
+	if(uf2>>31)
+		return -value;
 
-	if(exp==0x7F800000)
-		frac=0;
-
-	return sign|exp|frac;
+	return value;
 }
 
 /*
